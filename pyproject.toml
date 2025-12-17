@@ -1,0 +1,59 @@
+[tool.poetry]
+name="cine-analyst-enterprise"
+version = "0.1.0"
+description = "Enterprise Movie Analysis AI Agent System"
+authors = ["Your Name <you@example.com>"]
+packages = [{include = "cine_analyst", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+# [Common]
+pydantic = "^2.6.0"
+pydantic-settings = "^2.1.0"
+python-dotenv = "^1.0.0"
+loguru = "^0.7.2"
+pandas = "^2.2.0"
+numpy = "^1.26.0"
+
+# [Service & RAG]
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0"
+langchain = "^0.1.0"
+langchain-community = "^0.0.10"
+langchain-openai = "^0.0.5"
+langgraph = "^0.0.24"
+opensearch-py = "^2.4.2"
+neo4j = "^5.15.0"
+sentence-transformers = "^2.3.0"
+openai = "^1.12.0"
+
+# [Training] - 무거운 라이브러리는 별도 그룹으로 관리
+[tool.poetry.group.train.dependencies]
+torch = {version = "2.2.0", source = "pytorch_cu121"}
+transformers = "^4.37.0"
+datasets = "^2.16.0"
+trl = "^0.7.10"
+# Unsloth: Git 설치 (Colab 호환성 및 최신 패치 적용)
+unsloth = {git = "https://github.com/unslothai/unsloth.git"}
+
+# [Test]
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+httpx = "^0.26.0"
+
+[[tool.poetry.source]]
+name = "pytorch_cu121"
+url = "https://download.pytorch.org/whl/cu121"
+priority = "explicit"
+
+[tool.poetry.scripts]
+# CLI 명령어 등록
+cine-ingest = "cine_analyst.data.ingestor:run_cli"
+cine-train = "cine_analyst.training.trainer:run_cli"
+cine-download = "cine_analyst.data.crawler:run_cli"
+cine-server = "cine_analyst.app.main:start"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

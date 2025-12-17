@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # 1. Vector DB (OpenSearch)
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: cine-opensearch
+    environment:
+      - discovery.type=single-node
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+
+  # 2. Graph DB (Neo4j)
+  neo4j:
+    image: neo4j:5.15.0
+    container_name: cine-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password
+    volumes:
+      - neo4j-data:/data
+
+  # 3. Redis (Cache & State)
+  redis:
+    image: redis:alpine
+    container_name: cine-redis
+    ports:
+      - "6379:6379"
+
+  # 4. vLLM Serving (GPU Required)
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: cine-vllm
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ./models:/models
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+    command: --model /models/tuned_adapter --served-model-name cine-analyst --max-model-len 2048
+    ports:
+      - "8000:8000"
+
+volumes:
+  opensearch-data:
+  neo4j-data:
