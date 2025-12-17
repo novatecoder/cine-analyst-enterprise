@@ -1,44 +1,33 @@
+# 최신 Docker Compose에서는 version 속성이 생략 가능하므로 제거하거나 유지해도 무방합니다.
 version: '3.8'
 
 services:
-  # 1. Vector DB (OpenSearch)
-  opensearch:
-    image: opensearchproject/opensearch:2.11.0
-    container_name: cine-opensearch
-    environment:
-      - discovery.type=single-node
-      - "DISABLE_INSTALL_DEMO_CONFIG=true"
-      - "DISABLE_SECURITY_PLUGIN=true"
-    ports:
-      - "9200:9200"
-      - "9600:9600"
-    volumes:
-      - opensearch-data:/usr/share/opensearch/data
-
-  # 2. Graph DB (Neo4j)
-  neo4j:
-    image: neo4j:5.15.0
-    container_name: cine-neo4j
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    environment:
-      - NEO4J_AUTH=neo4j/password
-    volumes:
-      - neo4j-data:/data
-
-  # 3. Redis (Cache & State)
-  redis:
-    image: redis:alpine
-    container_name: cine-redis
-    ports:
-      - "6379:6379"
-
-  # 4. vLLM Serving (GPU Required)
+  # 1. vLLM 모델 서빙 엔진
+  # Unsloth로 학습된 LoRA 어댑터를 Base 모델에 얹어서 실행하도록 최적화되었습니다.
   vllm:
     image: vllm/vllm-openai:latest
     container_name: cine-vllm
     runtime: nvidia
+    ports:
+      - "8081:8000"
+    volumes:
+      # 1. 내 리눅스에 이미 받아진 베이스 모델 캐시를 공유 (강력 추천)
+      - ~/.cache/huggingface:/root/.cache/huggingface
+      # 2. 내 LoRA 어댑터가 들어있는 폴더 마운트
+      - ./models:/app/models
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      # 만약 Hugging Face 토큰이 필요하다면 추가
+      - HF_TOKEN=${HF_TOKEN} 
+    command: [
+      "--model", "unsloth/Qwen2.5-1.5B-Instruct",
+      "--enable-lora",
+      # /app/models/tuned_adapter 폴더가 실제 로컬의 ./models/tuned_adapter와 매핑됨
+      "--lora-modules", "tuned-sql=/app/models/tuned_adapter",
+      "--gpu-memory-utilization", "0.5",
+      "--max-model-len", "2048",
+      "--trust-remote-code"
+    ]
     deploy:
       resources:
         reservations:
@@ -46,14 +35,75 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    volumes:
-      - ./models:/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 600s  # 모델 로딩 시간을 대기해줍니다.
+
+  # 2. OpenSearch (비정형 벡터 검색 스토리지)
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: cine-opensearch
     environment:
-      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
-    command: --model /models/tuned_adapter --served-model-name cine-analyst --max-model-len 2048
+      - cluster.name=cine-cluster
+      - node.name=cine-node
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - DISABLE_INSTALL_DEMO_CONFIG=true
+      - DISABLE_SECURITY_PLUGIN=true 
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+
+  # 3. Neo4j (지식 그래프 데이터베이스)
+  neo4j:
+    image: neo4j:5.12.0
+    container_name: cine-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_PLUGINS=["apoc"]
+
+  # 4. FastAPI 앱 (Unsloth 기반 학습 및 에이전트 실행)
+  app:
+    build: .
+    container_name: cine-app
+    runtime: nvidia
     ports:
       - "8000:8000"
+    volumes:
+      - ./data:/app/data        # 데이터 로드 에러 방지를 위한 마운트
+      - ./models:/app/models    # 학습 결과물 저장을 위한 마운트
+    env_file:
+      - .env
+    environment:
+      - ENV=dev
+      - OPENSEARCH_URL=http://opensearch:9200
+      - NEO4J_URI=bolt://neo4j:7687
+      - VLLM_URL=http://vllm:8000/v1  # 컨테이너 네트워크를 통한 내부 통신
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      vllm:
+        condition: service_healthy   # vLLM이 모델 로드를 완료할 때까지 대기
+      opensearch:
+        condition: service_started
+      neo4j:
+        condition: service_started
 
-volumes:
-  opensearch-data:
-  neo4j-data:
+networks:
+  default:
+    name: cine-network
