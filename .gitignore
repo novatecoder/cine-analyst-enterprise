@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .coverage
 unsloth_compiled_cache/
+wandb/
 
 # Data & Models
 # 프로젝트 최상위의 data 폴더만 무시 (앞에 /를 붙이면 루트 기준이 됩니다)
