@@ -1,5 +1,5 @@
 [tool.poetry]
-name="cine-analyst-enterprise"
+name = "cine-analyst-enterprise"
 version = "0.1.0"
 description = "Enterprise Movie Analysis AI Agent System"
 authors = ["Your Name <you@example.com>"]
@@ -34,7 +34,7 @@ transformers = "^4.37.0"
 datasets = "^2.16.0"
 trl = "^0.7.10"
 # Unsloth: Git 설치 (Colab 호환성 및 최신 패치 적용)
-unsloth = {git = "https://github.com/unslothai/unsloth.git"}
+# unsloth = {git = "https://github.com/unslothai/unsloth.git"}
 
 # [Test]
 [tool.poetry.group.dev.dependencies]
@@ -53,6 +53,7 @@ cine-ingest = "cine_analyst.data.ingestor:run_cli"
 cine-train = "cine_analyst.training.trainer:run_cli"
 cine-download = "cine_analyst.data.crawler:run_cli"
 cine-server = "cine_analyst.app.main:start"
+cine-preprocess = "cine_analyst.data.preprocessor:preprocess_for_training"
 
 [build-system]
 requires = ["poetry-core"]

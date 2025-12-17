@@ -59,3 +59,10 @@ def preprocess_for_training(
             f.write(json.dumps(item, ensure_ascii=False) + '\n')
             
     logger.success(f"✅ Preprocessing complete: {output_path} ({len(formatted_data)} items)")
+
+def run_cli():
+    """터미널에서 명령어로 실행하기 위한 함수"""
+    preprocess_for_training()
+
+if __name__ == "__main__":
+    run_cli()
