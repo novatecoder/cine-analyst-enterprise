@@ -1,4 +1,3 @@
-# 최신 Docker Compose에서는 version 속성이 생략 가능하므로 제거하거나 유지해도 무방합니다.
 version: '3.8'
 
 services:
@@ -26,7 +25,8 @@ services:
       "--lora-modules", "tuned-sql=/app/models/tuned_adapter",
       "--gpu-memory-utilization", "0.5",
       "--max-model-len", "2048",
-      "--trust-remote-code"
+      "--trust-remote-code",
+      "--enforce-eager"  # 시작 속도 향상 및 메모리 부족 방지를 위해 추가
     ]
     deploy:
       resources:
@@ -88,6 +88,8 @@ services:
       - ENV=dev
       - OPENSEARCH_URL=http://opensearch:9200
       - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j           # 인증 오류 해결을 위해 명시적 추가
+      - NEO4J_PASSWORD=password123  # NEO4J_AUTH 설정과 일치시킴
       - VLLM_URL=http://vllm:8000/v1  # 컨테이너 네트워크를 통한 내부 통신
     deploy:
       resources:

@@ -3,40 +3,43 @@ from typing import Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "CineAnalyst Enterprise"
-    ENV: str = "local"
+    ENV: str = "dev"
     DEBUG: bool = True
 
     # [Paths]
     DATA_DIR: str = "./data"
-    RAW_DATA_PATH: str = "./data/raw/movies.csv"            # 파일명까지 포함하는 것이 안전함
-    PROCESSED_DATA_PATH: str = "./data/processed/train.jsonl" # 파일명까지 포함하는 것이 안전함
+    RAW_DATA_PATH: str = "./data/raw/movies.csv"
+    PROCESSED_DATA_PATH: str = "./data/processed/train.jsonl"
     MODEL_SAVE_DIR: str = "./models/tuned_adapter"
 
     # [vLLM]
-    # docker-compose에서 8081:8000으로 포트 매핑을 했으므로 외부 호출 시 8081이 맞습니다.
-    VLLM_URL: str = "http://localhost:8081/v1"
-    MODEL_NAME: str = "tuned_adapter"
+    # docker-compose 호스트 이름과 포트를 기본값으로 설정
+    VLLM_URL: str = "http://vllm:8000/v1"
+    MODEL_NAME: str = "tuned-sql"
 
     # [OpenSearch]
-    OPENSEARCH_URL: str = "http://localhost:9200"
+    OPENSEARCH_URL: str = "http://opensearch:9200"
     OPENSEARCH_USER: str = "admin"
     OPENSEARCH_PASSWORD: str = "admin"
+    OPENSEARCH_INDEX: str = "movies"
 
     # [Neo4j]
-    NEO4J_URI: str = "bolt://localhost:7687"
+    # docker-compose 설정값과 일치시킴
+    NEO4J_URI: str = "bolt://neo4j:7687"
     NEO4J_USER: str = "neo4j"
-    NEO4J_PASSWORD: str = "password"
+    NEO4J_PASSWORD: str = "password123"
 
-    # [Model Settings] - trainer.py 실행에 필요한 누락된 필드들 추가
+    # [Model Settings]
     BASE_MODEL_NAME: str = "unsloth/Qwen2.5-1.5B-Instruct"
-    MAX_SEQ_LENGTH: int = 2048  # <-- 이 부분이 없어서 에러가 발생했습니다.
-    LOAD_IN_4BIT: bool = True   # <-- trainer.py에서 참조하는 필드입니다.
+    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    MAX_SEQ_LENGTH: int = 2048
+    LOAD_IN_4BIT: bool = True
     HF_TOKEN: Optional[str] = None
     
-    # LoRA 관련
+    # [LoRA]
     LORA_RANK: int = 16
     LORA_ALPHA: int = 32
-    LORA_DROPOUT: float = 0.05  # <-- 추가
+    LORA_DROPOUT: float = 0.05
 
     model_config = SettingsConfigDict(
         env_file=".env",

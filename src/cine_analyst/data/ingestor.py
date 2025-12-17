@@ -85,8 +85,8 @@ class Neo4jStore(GraphStoreBase):
     """Neo4j를 이용한 GraphStore 구현체"""
     def __init__(self):
         self.driver = GraphDatabase.driver(
-            settings.NEO4J_URI, 
-            auth=(settings.NEO4J_AUTH_USER, settings.NEO4J_AUTH_PASS)
+            settings.NEO4J_URI,
+            auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD)
         )
 
     def ingest(self, df: pd.DataFrame):
