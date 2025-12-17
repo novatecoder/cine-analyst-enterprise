@@ -5,6 +5,7 @@ from typing import List
 from loguru import logger
 from cine_analyst.common.config import settings
 from cine_analyst.common.schemas import TrainingExample
+import click
 
 SYSTEM_PROMPT = """You are an expert movie analyst. Analyze the movie details and output a JSON response."""
 
@@ -60,9 +61,9 @@ def preprocess_for_training(
             
     logger.success(f"✅ Preprocessing complete: {output_path} ({len(formatted_data)} items)")
 
-def run_cli():
-    """터미널에서 명령어로 실행하기 위한 함수"""
-    preprocess_for_training()
-
-if __name__ == "__main__":
-    run_cli()
+@click.command()
+@click.option('--input', default=settings.RAW_DATA_PATH)
+@click.option('--output', default=settings.PROCESSED_DATA_PATH)
+@click.option('--sample', type=int, help='샘플링 수')
+def run_cli(input, output, sample):
+    preprocess_for_training(input_path=input, output_path=output, sample_size=sample)

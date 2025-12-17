@@ -4,6 +4,7 @@ import requests
 import pandas as pd
 from loguru import logger
 from cine_analyst.common.config import settings
+import click
 
 TARGET_URL = "https://raw.githubusercontent.com/CTopham/TophamRepo/master/Movie%20Project/Resources/tmdb_5000_movies.csv"
 
@@ -31,5 +32,7 @@ def download_raw_data(output_path: str = settings.RAW_DATA_PATH):
         logger.error(f"❌ Failed to download data: {e}")
         raise
 
-def run_cli():
-    download_raw_data()
+@click.command()
+@click.option('--output', default=settings.RAW_DATA_PATH, help='데이터 저장 경로')
+def run_cli(output):
+    download_raw_data(output_path=output)

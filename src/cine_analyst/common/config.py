@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     
     VLLM_API_URL: str = "http://localhost:8000/v1"
 
+    # LoRA 관련 설정 추가
+    LORA_RANK: int = 16  # 기본값으로 16 또는 32 권장
+    LORA_ALPHA: int = 32
+    LORA_DROPOUT: float = 0.05
+
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8", 

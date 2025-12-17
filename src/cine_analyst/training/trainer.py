@@ -1,6 +1,7 @@
 import os
 from loguru import logger
 from cine_analyst.common.config import settings
+import torch
 
 def train_model(
     base_model: str = settings.BASE_MODEL_NAME,
